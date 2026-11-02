@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Practice 1 – Football Team Management</title>
+  <meta name="description" content="Node.js practice: build a CRUD REST API with Express.js and MySQL for a football team." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Lora:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+:root {
+  --bg: #f5f7f0;
+  --card: #fbfcf8;
+  --ink: #1e2433;
+  --body: #3a4356;
+  --muted: #5d677b;
+  --faint: #7b8498;
+  --line: #e0e6da;
+  --teal: #4a9084;
+  --teal-dark: #2f6f65;
+  --teal-soft: #e2efea;
+  --amber: #e8b130;
+  --amber-soft: #fbf1d3;
+  --code-bg: #edf1e8;
+
+  --display: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --serif: "Lora", Georgia, "Times New Roman", serif;
+  --sans: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--body);
+  line-height: 1.7;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.84em;
+  background: var(--teal-soft);
+  color: var(--teal-dark);
+  padding: 1px 7px;
+  border-radius: 5px;
+}
+
+/* top bar */
+.topbar { position: sticky; top: 0; z-index: 20; background: rgba(245, 247, 240, 0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.topbar-inner { max-width: 1120px; margin: 0 auto; padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.topbar-title { font-family: var(--display); font-weight: 700; font-size: 1.05rem; color: var(--ink); display: flex; align-items: center; gap: 10px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 5px rgba(232, 177, 48, 0.18); }
+.topbar nav { display: flex; gap: 24px; flex-wrap: wrap; }
+.topbar nav a { color: var(--muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.15s; }
+.topbar nav a:hover { color: var(--teal-dark); }
+
+/* hero */
+.hero { background: transparent; }
+.hero-inner { max-width: 1120px; margin: 0 auto; padding: 72px 28px 36px; }
+.practice-label { display: block; font-family: var(--mono); font-size: 0.82rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); }
+h1 { font-family: var(--display); font-size: clamp(2.4rem, 6.2vw, 4.3rem); line-height: 1.08; font-weight: 700; color: var(--ink); margin: 22px 0 26px; letter-spacing: -0.03em; max-width: 880px; }
+h1 .hl { color: var(--teal); }
+.subtitle { font-family: var(--serif); font-size: 1.22rem; line-height: 1.75; color: var(--muted); max-width: 720px; margin-bottom: 24px; }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tags span { font-family: var(--mono); font-size: 0.76rem; font-weight: 500; color: var(--teal-dark); background: var(--teal-soft); padding: 4px 12px; border-radius: 999px; }
+
+/* layout: content + sticky sidebar */
+.page { max-width: 1120px; margin: 0 auto; padding: 10px 28px 30px; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 48px; align-items: start; }
+.content { min-width: 0; }
+.sidebar { position: sticky; top: 84px; margin-top: 34px; max-height: calc(100vh - 104px); overflow-y: auto; }
+.side-card { background: var(--card); border: 1px solid var(--line); border-top: 3px solid var(--teal); border-radius: 12px; padding: 22px 20px; }
+.side-card h2 { font-size: 1.15rem; margin-bottom: 6px; display: block; }
+.side-sub { font-size: 0.82rem; color: var(--muted); line-height: 1.5; margin-bottom: 14px; }
+
+/* sections */
+.card { padding: 40px 0 36px; border-bottom: 1px solid var(--line); }
+.card:last-child { border-bottom: none; }
+.card p { margin-bottom: 12px; }
+
+h2 { font-family: var(--display); font-size: 1.55rem; font-weight: 700; color: var(--ink); letter-spacing: -0.02em; margin-bottom: 18px; display: flex; align-items: baseline; gap: 14px; }
+.num { font-family: var(--mono); font-size: 0.8rem; font-weight: 500; color: var(--teal); letter-spacing: 0.08em; }
+.num::before { content: "0"; }
+h3 { font-family: var(--display); font-size: 1.12rem; font-weight: 700; color: var(--ink); margin: 26px 0 10px; }
+h4 { font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--faint); margin: 16px 0 6px; font-weight: 500; }
+
+/* tables */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; margin: 14px 0; background: var(--card); }
+table { width: 100%; border-collapse: collapse; font-size: 0.93rem; }
+th, td { text-align: left; padding: 12px 16px; vertical-align: top; }
+th { background: var(--teal-soft); color: var(--teal-dark); font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600; }
+tbody tr + tr td { border-top: 1px solid var(--line); }
+td ul { margin-left: 18px; }
+td li { margin-bottom: 4px; }
+td:first-child { white-space: nowrap; font-weight: 500; }
+.test-table td:nth-child(2) { overflow-wrap: anywhere; min-width: 190px; }
+.test-table td:first-child { white-space: nowrap; }
+
+/* notes */
+.note { padding: 12px 16px; border-radius: 10px; background: var(--teal-soft); border-left: 4px solid var(--teal); margin-top: 16px; font-size: 0.94rem; }
+.note.warning { background: var(--amber-soft); border-left-color: var(--amber); }
+.note.warning code { background: rgba(255, 255, 255, 0.7); color: #7a5a00; }
+
+/* lists */
+.steps, .rules { margin: 8px 0 14px 22px; }
+.steps li, .rules li { margin-bottom: 8px; padding-left: 4px; }
+.steps li::marker { color: var(--teal); font-weight: 700; }
+.rules li::marker { color: var(--amber); }
+
+/* code */
+.code-block { background: var(--code-bg); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin: 8px 0 14px; }
+.code-head { display: flex; justify-content: space-between; align-items: center; padding: 7px 14px; background: #e4eadd; border-bottom: 1px solid var(--line); font-size: 0.74rem; color: var(--muted); font-family: var(--mono); }
+.copy { border: 1px solid #cdd7c6; background: var(--card); color: var(--teal-dark); font-weight: 600; font-size: 0.74rem; padding: 2px 12px; border-radius: 999px; cursor: pointer; font-family: var(--sans); transition: background 0.15s, color 0.15s; }
+.copy:hover { background: var(--teal); color: #fff; border-color: var(--teal); }
+pre { padding: 16px 18px; overflow-x: auto; font-family: var(--mono); font-size: 0.85rem; line-height: 1.6; color: var(--ink); }
+pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+
+/* APIs */
+.api { padding: 22px 0 6px; border-top: 1px solid var(--line); }
+.api:first-of-type { border-top: none; padding-top: 4px; }
+.api-title { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
+.api-no { font-family: var(--display); font-weight: 700; font-size: 1.05rem; color: var(--ink); }
+.method { font-family: var(--mono); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.06em; padding: 2px 10px; border-radius: 6px; border: 1px solid currentColor; background: var(--card); }
+.method.get { color: #2f7a62; }
+.method.post { color: #9a6a00; }
+.method.put { color: #3b6aa8; }
+.method.delete { color: #b3433f; }
+.api-title code { background: none; color: var(--ink); font-size: 1rem; font-weight: 500; padding: 0; }
+
+/* checklist (sidebar) */
+.meter { height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.meter-fill { height: 100%; width: 0; background: var(--teal); border-radius: 999px; transition: width 0.4s ease; }
+.progress-text { font-family: var(--mono); font-weight: 500; font-size: 0.76rem; color: var(--teal-dark); margin: 8px 0 8px; }
+.checklist { list-style: none; margin: 4px 0 14px; }
+.checklist label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); cursor: pointer; font-size: 0.88rem; line-height: 1.45; }
+.checklist label:has(input:checked) { color: var(--faint); text-decoration: line-through; text-decoration-color: #b4bcab; }
+.checklist input { width: 16px; height: 16px; margin-top: 2px; flex: none; accent-color: var(--teal); }
+.checklist code { font-size: 0.8em; }
+.reset { background: none; border: 1px solid var(--line); padding: 5px 14px; border-radius: 999px; cursor: pointer; color: var(--muted); font-family: var(--sans); font-size: 0.8rem; }
+.reset:hover { border-color: var(--teal); color: var(--teal-dark); }
+
+footer { text-align: center; color: var(--faint); font-size: 0.78rem; padding: 18px 24px 40px; border-top: 1px solid var(--line); max-width: 1064px; margin: 0 auto; }
+
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 80px); background: var(--ink); color: #fff; padding: 9px 20px; border-radius: 999px; font-size: 0.86rem; transition: transform 0.25s; z-index: 50; }
+.toast.show { transform: translate(-50%, 0); }
+
+/* tablet and mobile: sidebar stacks below content */
+@media (max-width: 920px) {
+  .layout { grid-template-columns: 1fr; gap: 10px; }
+  .sidebar { position: static; max-height: none; margin: 0 0 30px; }
+  .topbar nav { display: none; }
+  .hero-inner { padding: 48px 28px 24px; }
+  td:first-child { white-space: normal; }
+}
+
+</style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <span class="topbar-title"><span class="dot"></span>Node.js Practice</span>
+      <nav>
+        <a href="#problem">Problem</a>
+        <a href="#instructions">Instructions</a>
+        <a href="#apis">APIs</a>
+        <a href="#database">Database</a>
+        <a href="#testing">Testing</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-inner">
+      <span class="practice-label">Practice 1: REST API with Node.js</span>
+      <h1>Football Team <span class="hl">Management.</span></h1>
+      <p class="subtitle">Build a REST API with Node.js, Express.js and MySQL to manage the players of a football team.</p>
+      <div class="tags">
+        <span>Node.js</span><span>Express.js</span><span>MySQL</span><span>mysql2</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page">
+  <div class="layout">
+  <main class="content">
+
+    <!-- PROBLEM -->
+    <section id="problem" class="card">
+      <h2><span class="num">1</span>Problem Description</h2>
+      <p>You are given a file <code>app.js</code> and a MySQL database named <code>football_practice_db</code>, which consists of a table <code>football_team</code>.</p>
+      <p>Write APIs to perform operations on the <code>football_team</code> table containing the following columns:</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Column</th><th>Type</th></tr></thead>
+          <tbody>
+            <tr><td><code>player_id</code></td><td>INTEGER (Primary Key, Auto Increment)</td></tr>
+            <tr><td><code>player_name</code></td><td>VARCHAR(100)</td></tr>
+            <tr><td><code>jersey_number</code></td><td>INTEGER</td></tr>
+            <tr><td><code>position</code></td><td>VARCHAR(50)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="note"><strong>Note:</strong> The table columns use <code>snake_case</code> (for example <code>player_name</code>), but the API requests and responses use <code>camelCase</code> (for example <code>playerName</code>).</p>
+    </section>
+
+    <!-- INSTRUCTIONS -->
+    <section id="instructions" class="card">
+      <h2><span class="num">2</span>Instructions</h2>
+      <ul class="rules">
+        <li>Use <strong>MySQL</strong> as the database.</li>
+        <li>Use the <code>mysql2</code> package to connect MySQL with Node.js.</li>
+        <li>Use <strong>Express.js</strong> to create the APIs.</li>
+        <li>Use <code>npm install</code> to install the required packages.</li>
+        <li>Export the Express instance using the <strong>default export</strong> syntax.</li>
+        <li>Use <strong>SQL queries</strong> to perform all database operations.</li>
+      </ul>
+    </section>
+
+    <!-- APIS -->
+    <section id="apis" class="card">
+      <h2><span class="num">3</span>API Specifications</h2>
+
+      <!-- API 1 -->
+      <div class="api">
+        <div class="api-title"><span class="api-no">API 1</span><span class="method get">GET</span><code>/players/</code></div>
+        <p><strong>Description:</strong> Returns a list of all players in the football team.</p>
+        <h4>Response</h4>
+        <div class="code-block">
+          <div class="code-head"><span>JSON</span><button class="copy" data-copy="r1">Copy</button></div>
+<pre><code id="r1">[
+  {
+    "playerId": 1,
+    "playerName": "Lionel Messi",
+    "jerseyNumber": 10,
+    "position": "Forward"
+  },
+  {
+    "playerId": 2,
+    "playerName": "Cristiano Ronaldo",
+    "jerseyNumber": 7,
+    "position": "Forward"
+  }
+]</code></pre>
+        </div>
+      </div>
+
+      <!-- API 2 -->
+      <div class="api">
+        <div class="api-title"><span class="api-no">API 2</span><span class="method post">POST</span><code>/players/</code></div>
+        <p><strong>Description:</strong> Creates a new player in the football team (database). <code>player_id</code> should be auto-incremented.</p>
+        <h4>Request</h4>
+        <div class="code-block">
+          <div class="code-head"><span>JSON</span><button class="copy" data-copy="q2">Copy</button></div>
+<pre><code id="q2">{
+  "playerName": "Neymar Jr",
+  "jerseyNumber": 11,
+  "position": "Forward"
+}</code></pre>
+        </div>
+        <h4>Response</h4>
+        <div class="code-block">
+          <div class="code-head"><span>Text</span></div>
+<pre><code>Player Added to Team</code></pre>
+        </div>
+      </div>
+
+      <!-- API 3 -->
+      <div class="api">
+        <div class="api-title"><span class="api-no">API 3</span><span class="method get">GET</span><code>/players/:playerId/</code></div>
+        <p><strong>Description:</strong> Returns a player based on a player ID.</p>
+        <h4>Response</h4>
+        <div class="code-block">
+          <div class="code-head"><span>JSON</span><button class="copy" data-copy="r3">Copy</button></div>
+<pre><code id="r3">{
+  "playerId": 1,
+  "playerName": "Lionel Messi",
+  "jerseyNumber": 10,
+  "position": "Forward"
+}</code></pre>
+        </div>
+      </div>
+
+      <!-- API 4 -->
+      <div class="api">
+        <div class="api-title"><span class="api-no">API 4</span><span class="method put">PUT</span><code>/players/:playerId/</code></div>
+        <p><strong>Description:</strong> Updates the details of a player in the football team (database) based on the player ID.</p>
+        <h4>Request</h4>
+        <div class="code-block">
+          <div class="code-head"><span>JSON</span><button class="copy" data-copy="q4">Copy</button></div>
+<pre><code id="q4">{
+  "playerName": "Kylian Mbappe",
+  "jerseyNumber": 9,
+  "position": "Forward"
+}</code></pre>
+        </div>
+        <h4>Response</h4>
+        <div class="code-block">
+          <div class="code-head"><span>Text</span></div>
+<pre><code>Player Details Updated</code></pre>
+        </div>
+      </div>
+
+      <!-- API 5 -->
+      <div class="api">
+        <div class="api-title"><span class="api-no">API 5</span><span class="method delete">DELETE</span><code>/players/:playerId/</code></div>
+        <p><strong>Description:</strong> Deletes a player from the football team (database) based on the player ID.</p>
+        <h4>Response</h4>
+        <div class="code-block">
+          <div class="code-head"><span>Text</span></div>
+<pre><code>Player Removed</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- DATABASE -->
+    <section id="database" class="card">
+      <h2><span class="num">4</span>Database Setup</h2>
+      <p>Follow these steps to create the database:</p>
+      <ol class="steps">
+        <li>Open <strong>MySQL Workbench</strong>.</li>
+        <li>Create a new <strong>SQL query</strong> tab.</li>
+        <li>Copy and paste the <strong>entire script</strong> given below.</li>
+        <li>Execute the script.</li>
+      </ol>
+
+      <div class="code-block">
+        <div class="code-head"><span>football_practice_db.sql</span><button class="copy" data-copy="sqlCode">Copy</button></div>
+<pre><code id="sqlCode">-- Create database
+CREATE DATABASE IF NOT EXISTS football_practice_db;
+
+-- Select database
+USE football_practice_db;
+
+-- Create table
+CREATE TABLE IF NOT EXISTS football_team (
+    player_id INT AUTO_INCREMENT PRIMARY KEY,
+    player_name VARCHAR(100),
+    jersey_number INT,
+    position VARCHAR(50)
+);
+
+-- Insert sample football players
+INSERT INTO football_team (player_name, jersey_number, position)
+VALUES
+    ('Lionel Messi', 10, 'Forward'),
+    ('Cristiano Ronaldo', 7, 'Forward'),
+    ('Kylian Mbappe', 9, 'Forward'),
+    ('Kevin De Bruyne', 17, 'Midfielder'),
+    ('Luka Modric', 10, 'Midfielder'),
+    ('Virgil van Dijk', 4, 'Defender'),
+    ('Sergio Ramos', 15, 'Defender'),
+    ('Alisson Becker', 1, 'Goalkeeper'),
+    ('Erling Haaland', 9, 'Forward'),
+    ('Jude Bellingham', 5, 'Midfielder');
+
+-- Display all players
+SELECT * FROM football_team;</code></pre>
+      </div>
+
+      <p class="note warning"><strong>Important:</strong> Run the script only <strong>once</strong> to avoid duplicate records. To start fresh, execute <code>DROP DATABASE football_practice_db;</code> and then run the complete script again.</p>
+    </section>
+
+    <!-- TESTING -->
+    <section id="testing" class="card">
+      <h2><span class="num">5</span>How to Test Your APIs</h2>
+      <p>Create an HTTP file (for example <code>test.http</code>) in your project and write one request for each endpoint listed below. Send the requests in the given order and check the points mentioned for each one. Change the port in the URL if your server runs on a different one.</p>
+
+      <div class="table-wrap">
+        <table class="test-table">
+          <thead><tr><th>Request</th><th>URL</th><th>What to check</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>http://localhost:3000/players/</code></td>
+              <td>
+                <ul>
+                  <li>Status is <code>200 OK</code>.</li>
+                  <li>The response is an array with all the players.</li>
+                  <li>Keys are in camelCase: <code>playerId</code>, <code>playerName</code>, <code>jerseyNumber</code>, <code>position</code>.</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="method post">POST</span></td>
+              <td><code>http://localhost:3000/players/</code></td>
+              <td>
+                <ul>
+                  <li>Send the JSON request body given in API 2 with the header <code>Content-Type: application/json</code>.</li>
+                  <li>The response text is exactly <code>Player Added to Team</code>.</li>
+                  <li>Send the GET request for all players again. The new player appears at the end of the list with an auto-generated ID.</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>http://localhost:3000/players/1/</code></td>
+              <td>
+                <ul>
+                  <li>The response is a single object (not an array).</li>
+                  <li>It shows Lionel Messi with the correct keys and values.</li>
+                  <li>Change the ID in the URL and check that the matching player is returned.</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="method put">PUT</span></td>
+              <td><code>http://localhost:3000/players/3/</code></td>
+              <td>
+                <ul>
+                  <li>Send the JSON request body given in API 4 with the header <code>Content-Type: application/json</code>.</li>
+                  <li>The response text is exactly <code>Player Details Updated</code>.</li>
+                  <li>Send the GET request for player 3 again. The details now match the request body.</li>
+                  <li>No other player has changed.</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="method delete">DELETE</span></td>
+              <td><code>http://localhost:3000/players/10/</code></td>
+              <td>
+                <ul>
+                  <li>The response text is exactly <code>Player Removed</code>.</li>
+                  <li>Send the GET request for all players again. Player 10 is no longer in the list.</li>
+                </ul>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="note"><strong>Tip:</strong> Running the requests again changes the data (a new ID is generated and the deleted player no longer exists). To start from the original data, drop the database and run the SQL script again.</p>
+    </section>
+
+
+  </main>
+
+  <aside class="sidebar" aria-label="Checklist">
+    <div class="side-card" id="checklist">
+      <h2>Checklist</h2>
+      <p class="side-sub">Tick each item as you finish it. Progress is saved in this browser.</p>
+      <div class="meter"><div class="meter-fill" id="meterFill"></div></div>
+      <p class="progress-text" id="progressText">0 of 10 completed</p>
+      <ul class="checklist">
+        <li><label><input type="checkbox" /> Database script executed in MySQL Workbench</label></li>
+        <li><label><input type="checkbox" /> Required packages installed using <code>npm install</code></label></li>
+        <li><label><input type="checkbox" /> API 1 – GET all players</label></li>
+        <li><label><input type="checkbox" /> API 2 – POST a new player</label></li>
+        <li><label><input type="checkbox" /> API 3 – GET a player by ID</label></li>
+        <li><label><input type="checkbox" /> API 4 – PUT (update) a player</label></li>
+        <li><label><input type="checkbox" /> API 5 – DELETE a player</label></li>
+        <li><label><input type="checkbox" /> Express instance exported using default export</label></li>
+        <li><label><input type="checkbox" /> All database operations use SQL queries</label></li>
+        <li><label><input type="checkbox" /> All APIs tested using the HTTP file</label></li>
+      </ul>
+      <button class="reset" id="resetBtn">Reset checklist</button>
+    </div>
+  </aside>
+  </div>
+  </div>
+
+  <footer>By Code Craft Club</footer>
+  <div class="toast" id="toast">Copied!</div>
+  <script>
+(function () {
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+
+  /* Copy buttons */
+  var toast = $("#toast");
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add("show");
+    setTimeout(function () { toast.classList.remove("show"); }, 1400);
+  }
+  $$(".copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var text = document.getElementById(btn.dataset.copy).innerText;
+      function done() { showToast("Copied to clipboard"); }
+      function fallback() {
+        var ta = document.createElement("textarea");
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        try { document.execCommand("copy"); } catch (e) {}
+        ta.remove(); done();
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else { fallback(); }
+    });
+  });
+
+  /* Checklist with saved progress */
+  var boxes = $$(".checklist input");
+  var text = $("#progressText");
+  var fill = $("#meterFill");
+  var KEY = "practice1-football-checklist-v3";
+  var saved = [];
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) {}
+  boxes.forEach(function (b, i) { b.checked = !!saved[i]; });
+
+  function update() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    text.textContent = n + " of " + boxes.length + " completed" + (n === boxes.length ? " – well done!" : "");
+    fill.style.width = (n / boxes.length) * 100 + "%";
+    try { localStorage.setItem(KEY, JSON.stringify(boxes.map(function (b) { return b.checked; }))); } catch (e) {}
+  }
+  boxes.forEach(function (b) { b.addEventListener("change", update); });
+  $("#resetBtn").addEventListener("click", function () {
+    boxes.forEach(function (b) { b.checked = false; });
+    update();
+  });
+  update();
+})();
+
+</script>
+</body>
+</html>
