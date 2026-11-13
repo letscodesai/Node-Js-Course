@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Practice 2 – Movies &amp; Actors</title>
+  <meta name="description" content="Node.js practice: build CRUD and query APIs with Express.js and MySQL on the Sakila database." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Lora:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+:root {
+  --bg: #f5f7f0;
+  --card: #fbfcf8;
+  --ink: #1e2433;
+  --body: #3a4356;
+  --muted: #5d677b;
+  --faint: #7b8498;
+  --line: #e0e6da;
+  --teal: #4a9084;
+  --teal-dark: #2f6f65;
+  --teal-soft: #e2efea;
+  --amber: #e8b130;
+  --amber-soft: #fbf1d3;
+  --code-bg: #edf1e8;
+
+  --display: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --serif: "Lora", Georgia, "Times New Roman", serif;
+  --sans: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--body);
+  line-height: 1.7;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.84em;
+  background: var(--teal-soft);
+  color: var(--teal-dark);
+  padding: 1px 7px;
+  border-radius: 5px;
+}
+
+/* top bar */
+.topbar { position: sticky; top: 0; z-index: 20; background: rgba(245, 247, 240, 0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.topbar-inner { max-width: 1120px; margin: 0 auto; padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.topbar-title { font-family: var(--display); font-weight: 700; font-size: 1.05rem; color: var(--ink); display: flex; align-items: center; gap: 10px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 0 5px rgba(232, 177, 48, 0.18); }
+.topbar nav { display: flex; gap: 24px; flex-wrap: wrap; }
+.topbar nav a { color: var(--muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.15s; }
+.topbar nav a:hover { color: var(--teal-dark); }
+
+/* hero */
+.hero { background: transparent; }
+.hero-inner { max-width: 1120px; margin: 0 auto; padding: 72px 28px 36px; }
+.practice-label { display: block; font-family: var(--mono); font-size: 0.82rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); }
+h1 { font-family: var(--display); font-size: clamp(2.4rem, 6.2vw, 4.3rem); line-height: 1.08; font-weight: 700; color: var(--ink); margin: 22px 0 26px; letter-spacing: -0.03em; max-width: 880px; }
+h1 .hl { color: var(--teal); }
+.subtitle { font-family: var(--serif); font-size: 1.22rem; line-height: 1.75; color: var(--muted); max-width: 720px; margin-bottom: 24px; }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tags span { font-family: var(--mono); font-size: 0.76rem; font-weight: 500; color: var(--teal-dark); background: var(--teal-soft); padding: 4px 12px; border-radius: 999px; }
+
+/* layout: content + sticky sidebar */
+.page { max-width: 1120px; margin: 0 auto; padding: 10px 28px 30px; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 48px; align-items: start; }
+.content { min-width: 0; }
+.sidebar { position: sticky; top: 84px; margin-top: 34px; max-height: calc(100vh - 104px); overflow-y: auto; }
+.side-card { background: var(--card); border: 1px solid var(--line); border-top: 3px solid var(--teal); border-radius: 12px; padding: 22px 20px; }
+.side-card h2 { font-size: 1.15rem; margin-bottom: 6px; display: block; }
+.side-sub { font-size: 0.82rem; color: var(--muted); line-height: 1.5; margin-bottom: 14px; }
+
+/* sections */
+.card { padding: 40px 0 36px; border-bottom: 1px solid var(--line); }
+.card:last-child { border-bottom: none; }
+.card p { margin-bottom: 12px; }
+
+h2 { font-family: var(--display); font-size: 1.55rem; font-weight: 700; color: var(--ink); letter-spacing: -0.02em; margin-bottom: 18px; display: flex; align-items: baseline; gap: 14px; }
+.num { font-family: var(--mono); font-size: 0.8rem; font-weight: 500; color: var(--teal); letter-spacing: 0.08em; }
+.num::before { content: "0"; }
+h3 { font-family: var(--display); font-size: 1.12rem; font-weight: 700; color: var(--ink); margin: 26px 0 10px; }
+h4 { font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--faint); margin: 16px 0 6px; font-weight: 500; }
+
+/* tables */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; margin: 14px 0; background: var(--card); }
+table { width: 100%; border-collapse: collapse; font-size: 0.93rem; }
+th, td { text-align: left; padding: 12px 16px; vertical-align: top; }
+th { background: var(--teal-soft); color: var(--teal-dark); font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600; }
+tbody tr + tr td { border-top: 1px solid var(--line); }
+td ul { margin-left: 18px; }
+td li { margin-bottom: 4px; }
+td:first-child { white-space: nowrap; font-weight: 500; }
+.test-table td:nth-child(2) { overflow-wrap: anywhere; min-width: 190px; }
+.test-table td:first-child { white-space: nowrap; }
+
+/* notes */
+.note { padding: 12px 16px; border-radius: 10px; background: var(--teal-soft); border-left: 4px solid var(--teal); margin-top: 16px; font-size: 0.94rem; }
+.note.warning { background: var(--amber-soft); border-left-color: var(--amber); }
+.note.warning code { background: rgba(255, 255, 255, 0.7); color: #7a5a00; }
+
+/* lists */
+.steps, .rules { margin: 8px 0 14px 22px; }
+.steps li, .rules li { margin-bottom: 8px; padding-left: 4px; }
+.steps li::marker { color: var(--teal); font-weight: 700; }
+.rules li::marker { color: var(--amber); }
+
+/* code */
+.code-block { background: var(--code-bg); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin: 8px 0 14px; }
+.code-head { display: flex; justify-content: space-between; align-items: center; padding: 7px 14px; background: #e4eadd; border-bottom: 1px solid var(--line); font-size: 0.74rem; color: var(--muted); font-family: var(--mono); }
+.copy { border: 1px solid #cdd7c6; background: var(--card); color: var(--teal-dark); font-weight: 600; font-size: 0.74rem; padding: 2px 12px; border-radius: 999px; cursor: pointer; font-family: var(--sans); transition: background 0.15s, color 0.15s; }
+.copy:hover { background: var(--teal); color: #fff; border-color: var(--teal); }
+pre { padding: 16px 18px; overflow-x: auto; font-family: var(--mono); font-size: 0.85rem; line-height: 1.6; color: var(--ink); }
+pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+
+/* APIs */
+.api { padding: 22px 0 6px; border-top: 1px solid var(--line); }
+.api:first-of-type { border-top: none; padding-top: 4px; }
+.api-title { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
+.api-no { font-family: var(--display); font-weight: 700; font-size: 1.05rem; color: var(--ink); }
+.method { font-family: var(--mono); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.06em; padding: 2px 10px; border-radius: 6px; border: 1px solid currentColor; background: var(--card); }
+.method.get { color: #2f7a62; }
+.method.post { color: #9a6a00; }
+.method.put { color: #3b6aa8; }
+.method.delete { color: #b3433f; }
+.api-title code { background: none; color: var(--ink); font-size: 1rem; font-weight: 500; padding: 0; }
+
+/* checklist (sidebar) */
+.meter { height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.meter-fill { height: 100%; width: 0; background: var(--teal); border-radius: 999px; transition: width 0.4s ease; }
+.progress-text { font-family: var(--mono); font-weight: 500; font-size: 0.76rem; color: var(--teal-dark); margin: 8px 0 8px; }
+.checklist { list-style: none; margin: 4px 0 14px; }
+.checklist label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); cursor: pointer; font-size: 0.88rem; line-height: 1.45; }
+.checklist label:has(input:checked) { color: var(--faint); text-decoration: line-through; text-decoration-color: #b4bcab; }
+.checklist input { width: 16px; height: 16px; margin-top: 2px; flex: none; accent-color: var(--teal); }
+.checklist code { font-size: 0.8em; }
+.reset { background: none; border: 1px solid var(--line); padding: 5px 14px; border-radius: 999px; cursor: pointer; color: var(--muted); font-family: var(--sans); font-size: 0.8rem; }
+.reset:hover { border-color: var(--teal); color: var(--teal-dark); }
+
+footer { text-align: center; color: var(--faint); font-size: 0.78rem; padding: 18px 24px 40px; border-top: 1px solid var(--line); max-width: 1064px; margin: 0 auto; }
+
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 80px); background: var(--ink); color: #fff; padding: 9px 20px; border-radius: 999px; font-size: 0.86rem; transition: transform 0.25s; z-index: 50; }
+.toast.show { transform: translate(-50%, 0); }
+
+/* tablet and mobile: sidebar stacks below content */
+@media (max-width: 920px) {
+  .layout { grid-template-columns: 1fr; gap: 10px; }
+  .sidebar { position: static; max-height: none; margin: 0 0 30px; }
+  .topbar nav { display: none; }
+  .hero-inner { padding: 48px 28px 24px; }
+  td:first-child { white-space: normal; }
+}
+
+/* ===== Movie theme tweaks (cinema hero, schema cards, challenge APIs) ===== */
+:root { --cinema: #14171f; --red: #e5484d; --red-soft: #fde8e8; --gold: #f2c14e; }
+
+.dot { background: var(--red); box-shadow: 0 0 0 5px rgba(229, 72, 77, 0.16); }
+
+.hero { max-width: 1120px; margin: 0 auto; padding: 24px 28px 0; }
+.hero-inner {
+  position: relative; overflow: hidden; max-width: none; margin: 0;
+  padding: 80px 52px 66px; border-radius: 20px; color: #fff;
+  background:
+    radial-gradient(ellipse 60% 90% at 88% 0%, rgba(229, 72, 77, 0.3), transparent 62%),
+    radial-gradient(ellipse 50% 70% at 0% 100%, rgba(74, 144, 132, 0.25), transparent 60%),
+    var(--cinema);
+}
+.hero-inner::before, .hero-inner::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 8px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.2) 14px, transparent 14px) 0 0 / 30px 8px repeat-x;
+}
+.hero-inner::before { top: 18px; }
+.hero-inner::after { bottom: 18px; }
+.practice-label { color: var(--gold); display: flex; align-items: center; gap: 10px; }
+.practice-label::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 4px rgba(229, 72, 77, 0.25); }
+h1 { color: #fff; }
+h1 .hl { color: #ff6b6b; background: linear-gradient(90deg, #ff6b6b, #f2c14e); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.hero .subtitle { color: #c3cad8; }
+.tags span { background: rgba(255, 255, 255, 0.1); color: #e6ebf3; }
+
+/* side-by-side table structures */
+.schema { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 14px; margin: 16px 0 8px; align-items: start; }
+.schema-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.schema-card header { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 14px; background: var(--cinema); color: #fff; font-family: var(--mono); font-size: 0.82rem; font-weight: 700; }
+.schema-card header span { font-weight: 500; font-size: 0.64rem; color: #9aa4b6; letter-spacing: 0.1em; text-transform: uppercase; }
+.schema-card table { font-size: 0.78rem; }
+.schema-card td { padding: 7px 12px; }
+.schema-card td:first-child { font-family: var(--mono); font-size: 0.76rem; font-weight: 500; color: var(--ink); white-space: nowrap; }
+.schema-card td:last-child { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); }
+.key { font-family: var(--mono); font-size: 0.6rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 6px; vertical-align: 1px; }
+.key.pk { background: var(--amber-soft); color: #8a6200; }
+.key.fk { background: var(--teal-soft); color: var(--teal-dark); }
+
+/* challenge APIs */
+.challenge-head { margin: 34px 0 6px; padding: 18px 20px; border-radius: 12px; background: var(--cinema); }
+.challenge-head h3 { color: #fff; margin: 0 0 4px; }
+.challenge-head p { margin: 0; color: #b9c1d0; font-size: 0.92rem; }
+.pill { font-family: var(--mono); font-size: 0.66rem; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: var(--red-soft); color: #b02a30; letter-spacing: 0.06em; text-transform: uppercase; }
+
+@media (max-width: 700px) {
+  .schema { grid-template-columns: 1fr; }
+  .hero { padding: 16px 16px 0; }
+  .hero-inner { padding: 60px 24px 52px; }
+}
+
+/* fixes: tidy URL wrapping in test table, compact sidebar checklist */
+.test-table td:nth-child(2) { overflow-wrap: normal; word-break: normal; min-width: 0; }
+.checklist label { padding: 6px 0; }
+
+</style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <span class="topbar-title"><span class="dot"></span>Node.js Practice</span>
+      <nav>
+        <a href="#problem">Problem</a>
+        <a href="#instructions">Instructions</a>
+        <a href="#apis">APIs</a>
+        <a href="#testing">Testing</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-inner">
+      <span class="practice-label">Practice 2: Sakila database &amp; REST APIs</span>
+      <h1>Movies &amp; <span class="hl">Actors.</span></h1>
+      <p class="subtitle">Build CRUD and query APIs with Node.js, Express.js and MySQL on the Sakila movie database. Nine endpoints, two of them real challenges.</p>
+      <div class="tags">
+        <span>Node.js</span><span>Express.js</span><span>MySQL</span><span>mysql2</span><span>SQL JOIN</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page">
+  <div class="layout">
+  <main class="content">
+
+    <!-- PROBLEM -->
+    <section id="problem" class="card">
+      <h2><span class="num">1</span>Problem Description</h2>
+      <p>Given an <code>app.js</code> file and the <strong>Sakila</strong> MySQL database, write APIs to perform CRUD operations and retrieve information from the database.</p>
+      <p>You will be working primarily with the following three tables:</p>
+
+      <div class="schema">
+        <div class="schema-card">
+          <header>film<span>Table 1</span></header>
+          <table><tbody>
+            <tr><td>film_id<span class="key pk">PK</span></td><td>INTEGER</td></tr>
+            <tr><td>title</td><td>VARCHAR</td></tr>
+            <tr><td>description</td><td>TEXT</td></tr>
+            <tr><td>release_year</td><td>YEAR</td></tr>
+            <tr><td>language_id</td><td>INTEGER</td></tr>
+            <tr><td>rental_duration</td><td>INTEGER</td></tr>
+            <tr><td>rental_rate</td><td>DECIMAL</td></tr>
+            <tr><td>length</td><td>INTEGER</td></tr>
+          </tbody></table>
+        </div>
+        <div class="schema-card">
+          <header>actor<span>Table 2</span></header>
+          <table><tbody>
+            <tr><td>actor_id<span class="key pk">PK</span></td><td>INTEGER</td></tr>
+            <tr><td>first_name</td><td>VARCHAR</td></tr>
+            <tr><td>last_name</td><td>VARCHAR</td></tr>
+          </tbody></table>
+        </div>
+        <div class="schema-card">
+          <header>film_actor<span>Table 3</span></header>
+          <table><tbody>
+            <tr><td>actor_id<span class="key fk">FK</span></td><td>INTEGER</td></tr>
+            <tr><td>film_id<span class="key fk">FK</span></td><td>INTEGER</td></tr>
+            <tr><td>last_update</td><td>TIMESTAMP</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+
+      <p class="note"><strong>Note:</strong> The <code>film_actor</code> table establishes the relationship between films and actors. A film can have multiple actors, and an actor can appear in multiple films.</p>
+      <p class="note warning"><strong>Important:</strong> Use the existing Sakila database. Do <strong>not</strong> create new tables.</p>
+      <p class="note"><strong>Note:</strong> The table columns use <code>snake_case</code> (for example <code>release_year</code>), but the API requests and responses use <code>camelCase</code> (for example <code>releaseYear</code>).</p>
+    </section>
+
+    <!-- INSTRUCTIONS -->
+    <section id="instructions" class="card">
+      <h2><span class="num">2</span>Instructions</h2>
+      <ul class="rules">
+        <li>Use <strong>MySQL</strong> as the database, with the existing <code>sakila</code> database.</li>
+        <li>Use the <code>mysql2</code> package to connect MySQL with Node.js.</li>
+        <li>Use <strong>Express.js</strong> to create the APIs.</li>
+        <li>Use <code>npm install</code> to install the required packages.</li>
+        <li>Export the Express instance using the <strong>default export</strong> syntax.</li>
+        <li>Use <strong>SQL queries</strong> to perform all database operations.</li>
+      </ul>
+    </section>
+
+    <!-- APIS -->
+    <section id="apis" class="card">
+      <h2><span class="num">3</span>API Specifications</h2>
+
+      <!-- API 1 -->
+      <div class="api">
+        <div class="api-title"><span class="api-no">API 1</span><span class="method get">GET</span><code>/films/</code></div>
+        <p><strong>Description:</strong> Returns a list of all film titles in the film table.</p>
+        <h4>Response</h4>
+        <div class="code-block">
+          <div class="code-head"><span>JSON</span><button class="copy" data-copy="r1">Copy</button></div>
+<pre><code id="r1">[
+  {
+    "filmId": 1,
+    "title": "ACADEMY DINOSAUR"
+  },
+  {
+    "filmId": 2,
+    "title": "ACE GOLDFINGER"
+  }
+]</code></pre>
+        </div>
+      </div>
+
+      <!-- API 2 -->
+      <div class="api">
+        <div class="api-title"><span class="api-no">API 2</span><span class="method post">POST</span><code>/films/</code></div>
+        <p><strong>Description:</strong> Creates a new film in the film table and associates an actor with that film in the <code>film_actor</code> table. The <code>film_id</code> is auto-incremented.</p>
+        <h4>Request</h4>
+        <div class="code-block">
+          <div class="code-head"><span>JSON</span><button class="copy" data-copy="q2">Copy</button></div>
+<pre><code id="q2">{
+  "title": "Jurassic Park",
+  "description": "A dinosaur adventure movie",
+  "releaseYear": 1993,
+  "languageId": 1,
+  "rentalDuration": 5,
+  "rentalRate": 2.99,
+  "length": 127,
+  "actorId": 10
+}</code></pre>
+        </div>
+        <h4>Response</h4>
+        <div class="code-block">
+          <div class="code-head"><span>Text</span></div>
+<pre><code>Film Successfully Added</code></pre>
+        </div>
+      </div>
+
+      <!-- API 3 -->
+      <div class="api">
+        <div class="api-title"><span class="api-no">API 3</span><span class="method get">GET</span><code>/films/:filmId/</code></div>
+        <p><strong>Description:</strong> Returns the details of a film based on the film ID.</p>
+        <h4>Response</h4>
+        <div class="code-block">
+          <div class="code-head"><span>JSON</span><button class="copy" data-copy="r3">Copy</button></div>
+<pre><code id="r3">{
+  "filmId": 1,
+  "title": "ACADEMY DINOSAUR",
+  "description": "A Epic Drama of a Feminist And a Mad Scientist",
+  "releaseYear": 2006,
+  "rentalDuration": 6,
+  "rentalRate": 0.99,
+  "length": 86
+}</code></pre>
+        </div>
+        <p class="note"><strong>Note:</strong> <code>rentalRate</code> must be a number (<code>0.99</code>), not a string. MySQL <code>DECIMAL</code> values may come back as strings from <code>mysql2</code>, so check the type in your response.</p>
+      </div>
+
+      <!-- API 4 -->
+      <div class="api">
+        <div class="api-title"><span class="api-no">API 4</span><span class="method put">PUT</span><code>/films/:filmId/</code></div>
+        <p><strong>Description:</strong> Updates the details of a film in the film table based on the film ID.</p>
+        <h4>Request</h4>
+        <div class="code-block">
+          <div class="code-head"><span>JSON</span><button class="copy" data-copy="q4">Copy</button></div>
+<pre><code id="q4">{
+  "title": "The Amazing Spider-Man",
+  "description": "A superhero adventure movie",
+  "releaseYear": 2012,
+  "rentalDuration": 5,
+  "rentalRate": 3.99,
+  "length": 136
+}</code></pre>
+        </div>
+        <h4>Response</h4>
+        <div class="code-block">
+          <div class="code-head"><span>Text</span></div>
+<pre><code>Film Details Updated</code></pre>
+        </div>
+      </div>
+
+      <!-- API 5 -->
+      <div class="api">
+        <div class="api-title"><span class="api-no">API 5</span><span class="method delete">DELETE</span><code>/films/:filmId/</code></div>
+        <p><strong>Description:</strong> Deletes a film from the film table based on the film ID. If the film has associated records in the <code>film_actor</code> table, those records should also be deleted.</p>
+        <h4>Response</h4>
+        <div class="code-block">
+          <div class="code-head"><span>Text</span></div>
+<pre><code>Film Removed</code></pre>
+        </div>
+      </div>
+
+      <!-- API 6 -->
+      <div class="api">
+        <div class="api-title"><span class="api-no">API 6</span><span class="method get">GET</span><code>/actors/</code></div>
+        <p><strong>Description:</strong> Returns a list of all actors in the actor table.</p>
+        <h4>Response</h4>
+        <div class="code-block">
+          <div class="code-head"><span>JSON</span><button class="copy" data-copy="r6">Copy</button></div>
+<pre><code id="r6">[
+  {
+    "actorId": 1,
+    "firstName": "PENELOPE",
+    "lastName": "GUINESS"
+  },
+  {
+    "actorId": 2,
+    "firstName": "NICK",
+    "lastName": "WAHLBERG"
+  }
+]</code></pre>
+        </div>
+      </div>
+
+      <!-- API 7 -->
+      <div class="api">
+        <div class="api-title"><span class="api-no">API 7</span><span class="method get">GET</span><code>/actors/:actorId/films/</code></div>
+        <p><strong>Description:</strong> Returns a list of all film titles associated with a specific actor.</p>
+        <h4>Response</h4>
+        <div class="code-block">
+          <div class="code-head"><span>JSON</span><button class="copy" data-copy="r7">Copy</button></div>
+<pre><code id="r7">[
+  {
+    "title": "ACADEMY DINOSAUR"
+  },
+  {
+    "title": "ANACONDA CONFESSIONS"
+  }
+]</code></pre>
+        </div>
+      </div>
+      <div class="challenge-head">
+        <h3>Additional Challenge APIs</h3>
+        <p>These two APIs are intentionally designed to be slightly more challenging. Think about the database relationships and SQL concepts before writing the queries.</p>
+      </div>
+
+      <!-- API 8 -->
+      <div class="api">
+        <div class="api-title"><span class="api-no">API 8</span><span class="method get">GET</span><code>/films/:filmId/actors/</code><span class="pill">Medium</span></div>
+        <p><strong>Description:</strong> Returns the details of all actors who have acted in a particular film based on the film ID. You need to retrieve information from both the <code>actor</code> and <code>film_actor</code> tables.</p>
+        <h4>Response</h4>
+        <div class="code-block">
+          <div class="code-head"><span>JSON</span><button class="copy" data-copy="r8">Copy</button></div>
+<pre><code id="r8">[
+  {
+    "actorId": 1,
+    "firstName": "PENELOPE",
+    "lastName": "GUINESS"
+  },
+  {
+    "actorId": 10,
+    "firstName": "CHRISTIAN",
+    "lastName": "GABLE"
+  }
+]</code></pre>
+        </div>
+        <p class="note"><strong>Hint:</strong> Think about how you can retrieve actor details using the relationship between the <code>actor</code> and <code>film_actor</code> tables. You will need an SQL <code>JOIN</code>.</p>
+      </div>
+
+      <!-- API 9 -->
+      <div class="api">
+        <div class="api-title"><span class="api-no">API 9</span><span class="method get">GET</span><code>/actors/film-count/</code><span class="pill">Medium</span></div>
+        <p><strong>Description:</strong> Returns a list of actors along with the total number of films they have acted in. The response should include <strong>all</strong> actors, even if an actor has no associated films.</p>
+        <h4>Response</h4>
+        <div class="code-block">
+          <div class="code-head"><span>JSON</span><button class="copy" data-copy="r9">Copy</button></div>
+<pre><code id="r9">[
+  {
+    "actorId": 1,
+    "actorName": "PENELOPE GUINESS",
+    "totalFilms": 19
+  },
+  {
+    "actorId": 2,
+    "actorName": "NICK WAHLBERG",
+    "totalFilms": 25
+  }
+]</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- TESTING -->
+    <section id="testing" class="card">
+      <h2><span class="num">4</span>How to Test Your APIs</h2>
+      <p>Create an HTTP file (for example <code>test.http</code>) in your project and write one request for each endpoint listed below. Send the requests in the order given and check the points mentioned for each one. The DELETE request is last because it removes the film added by the POST request. Change the port in the URL if your server runs on a different one.</p>
+
+      <div class="table-wrap">
+        <table class="test-table">
+          <thead><tr><th>Request</th><th>URL</th><th>What to check</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>http://localhost:3000<wbr>/films/</code></td>
+              <td>
+                <ul>
+                  <li>Status is <code>200 OK</code>.</li>
+                  <li>The response is an array of all films (1000 in a standard Sakila database).</li>
+                  <li>Each item has only <code>filmId</code> and <code>title</code>.</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="method post">POST</span></td>
+              <td><code>http://localhost:3000<wbr>/films/</code></td>
+              <td>
+                <ul>
+                  <li>Send the JSON request body given in API 2 with the header <code>Content-Type: application/json</code>.</li>
+                  <li>The response text is exactly <code>Film Successfully Added</code>.</li>
+                  <li>Send the GET all films request again. The new film appears at the end with an auto-generated ID. Note this ID, you need it for the last test.</li>
+                  <li>In MySQL Workbench run <code>SELECT * FROM film_actor WHERE film_id = &lt;new film ID&gt;;</code>. A row for actor 10 exists.</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>http://localhost:3000<wbr>/films/1/</code></td>
+              <td>
+                <ul>
+                  <li>The response is a single object (not an array).</li>
+                  <li>It shows ACADEMY DINOSAUR with exactly the keys <code>filmId</code>, <code>title</code>, <code>description</code>, <code>releaseYear</code>, <code>rentalDuration</code>, <code>rentalRate</code>, <code>length</code>.</li>
+                  <li><code>rentalRate</code> is a number, not a string.</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="method put">PUT</span></td>
+              <td><code>http://localhost:3000<wbr>/films/1/</code></td>
+              <td>
+                <ul>
+                  <li>Send the JSON request body given in API 4 with the header <code>Content-Type: application/json</code>.</li>
+                  <li>The response text is exactly <code>Film Details Updated</code>.</li>
+                  <li>Send the GET request for film 1 again. The details now match the request body.</li>
+                  <li>Other films and the film's <code>language_id</code> are unchanged.</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>http://localhost:3000<wbr>/actors/</code></td>
+              <td>
+                <ul>
+                  <li>The response is an array of all actors (200 in a standard Sakila database).</li>
+                  <li>Keys are in camelCase: <code>actorId</code>, <code>firstName</code>, <code>lastName</code>.</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>http://localhost:3000<wbr>/actors/1/films/</code></td>
+              <td>
+                <ul>
+                  <li>The response is an array of objects with only a <code>title</code> key.</li>
+                  <li>The list includes ACADEMY DINOSAUR.</li>
+                  <li>After the POST test, send the same request for actor 10. The new film's title is in the list.</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>http://localhost:3000<wbr>/films/1/actors/</code></td>
+              <td>
+                <ul>
+                  <li>The response is an array of actors with <code>actorId</code>, <code>firstName</code>, <code>lastName</code>.</li>
+                  <li>Actors 1 and 10 are in the list.</li>
+                  <li>Send the request with the new film's ID. Only actor 10 is returned.</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="method get">GET</span></td>
+              <td><code>http://localhost:3000<wbr>/actors/film-count/</code></td>
+              <td>
+                <ul>
+                  <li>Each item has <code>actorId</code>, <code>actorName</code> (first and last name joined by a space) and <code>totalFilms</code> (a number).</li>
+                  <li>The first two actors are PENELOPE GUINESS (19) and NICK WAHLBERG (25) in a standard Sakila database.</li>
+                  <li>Insert an actor with no films in MySQL Workbench. That actor still appears, with <code>totalFilms</code> as <code>0</code>.</li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="method delete">DELETE</span></td>
+              <td><code>http://localhost:3000<wbr>/films/&lt;newFilmId&gt;/</code></td>
+              <td>
+                <ul>
+                  <li>Use the ID of the film you added in the POST test. Original Sakila films are referenced by other tables (such as inventory), so deleting them can fail.</li>
+                  <li>The response text is exactly <code>Film Removed</code>.</li>
+                  <li>Send the GET all films request again. The film is no longer in the list.</li>
+                  <li>In MySQL Workbench, <code>film_actor</code> has no rows for that <code>film_id</code>.</li>
+                </ul>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="note"><strong>Tip:</strong> Running the POST request again adds one more film each time. If you want to start from the original data, remove the extra films using your DELETE API.</p>
+    </section>
+
+  </main>
+
+  <aside class="sidebar" aria-label="Checklist">
+    <div class="side-card" id="checklist">
+      <h2>Checklist</h2>
+      <p class="side-sub">Tick each item as you finish it. Progress is saved in this browser.</p>
+      <div class="meter"><div class="meter-fill" id="meterFill"></div></div>
+      <p class="progress-text" id="progressText">0 of 14 completed</p>
+      <ul class="checklist">
+        <li><label><input type="checkbox" /> <span>Sakila database is available in MySQL</span></label></li>
+        <li><label><input type="checkbox" /> <span>Required packages installed using <code>npm install</code></span></label></li>
+        <li><label><input type="checkbox" /> <span>API 1 – GET all films</span></label></li>
+        <li><label><input type="checkbox" /> <span>API 2 – POST a new film</span></label></li>
+        <li><label><input type="checkbox" /> <span>API 3 – GET a film by ID</span></label></li>
+        <li><label><input type="checkbox" /> <span>API 4 – PUT (update) a film</span></label></li>
+        <li><label><input type="checkbox" /> <span>API 5 – DELETE a film</span></label></li>
+        <li><label><input type="checkbox" /> <span>API 6 – GET all actors</span></label></li>
+        <li><label><input type="checkbox" /> <span>API 7 – GET films of an actor</span></label></li>
+        <li><label><input type="checkbox" /> <span>API 8 – GET actors of a film (challenge)</span></label></li>
+        <li><label><input type="checkbox" /> <span>API 9 – GET actor film counts (challenge)</span></label></li>
+        <li><label><input type="checkbox" /> <span>Express instance exported using default export</span></label></li>
+        <li><label><input type="checkbox" /> <span>All database operations use SQL queries</span></label></li>
+        <li><label><input type="checkbox" /> <span>All APIs tested using the HTTP file</span></label></li>
+      </ul>
+      <button class="reset" id="resetBtn">Reset checklist</button>
+    </div>
+  </aside>
+  </div>
+  </div>
+
+  <footer>By Code Craft Club</footer>
+  <div class="toast" id="toast">Copied!</div>
+  <script>
+(function () {
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+
+  /* Copy buttons */
+  var toast = $("#toast");
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add("show");
+    setTimeout(function () { toast.classList.remove("show"); }, 1400);
+  }
+  $$(".copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var text = document.getElementById(btn.dataset.copy).innerText;
+      function done() { showToast("Copied to clipboard"); }
+      function fallback() {
+        var ta = document.createElement("textarea");
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        try { document.execCommand("copy"); } catch (e) {}
+        ta.remove(); done();
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else { fallback(); }
+    });
+  });
+
+  /* Checklist with saved progress */
+  var boxes = $$(".checklist input");
+  var text = $("#progressText");
+  var fill = $("#meterFill");
+  var KEY = "practice2-movies-checklist-v1";
+  var saved = [];
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) {}
+  boxes.forEach(function (b, i) { b.checked = !!saved[i]; });
+
+  function update() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    text.textContent = n + " of " + boxes.length + " completed" + (n === boxes.length ? " – well done!" : "");
+    fill.style.width = (n / boxes.length) * 100 + "%";
+    try { localStorage.setItem(KEY, JSON.stringify(boxes.map(function (b) { return b.checked; }))); } catch (e) {}
+  }
+  boxes.forEach(function (b) { b.addEventListener("change", update); });
+  $("#resetBtn").addEventListener("click", function () {
+    boxes.forEach(function (b) { b.checked = false; });
+    update();
+  });
+  update();
+})();
+
+</script>
+</body>
+</html>
